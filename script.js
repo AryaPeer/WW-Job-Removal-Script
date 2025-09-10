@@ -1,32 +1,36 @@
 (function() {
-    console.log('Starting job remover...');
+    let isScriptComplete = false;
     
     function findAndClickRemoveButtons() {
+        if (isScriptComplete) return false;
+        
         const removeButtons = document.querySelectorAll('button[aria-label="Remove from search results"]');
         
-        console.log(`Found ${removeButtons.length} remove buttons`);
-        
         if (removeButtons.length === 0) {
-            console.log('No more remove buttons found. Process complete!');
+            isScriptComplete = true;
+            alert('Job removal complete! Script has stopped.');
             return false;
         }
         
         removeButtons.forEach((button, index) => {
+            if (isScriptComplete) return;
+            
             setTimeout(() => {
+                if (isScriptComplete) return;
+                
                 try {
                     button.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     button.click();
-                    console.log(`Clicked remove button ${index + 1}/${removeButtons.length}`);
                     
                     setTimeout(() => {
+                        if (isScriptComplete) return;
+                        
                         const confirmButtons = document.querySelectorAll('button');
                         for (const btn of confirmButtons) {
                             const text = btn.textContent.toLowerCase().trim();
-                            if (text.includes('yes') || text.includes('ok') ||
-                                text.includes('confirm') || text.includes('remove')) {
+                            if (text.includes('remove from search')) {
                                 if (btn.offsetParent !== null) {
                                     btn.click();
-                                    console.log('Confirmed removal');
                                     break;
                                 }
                             }
@@ -34,7 +38,7 @@
                     }, 200);
                     
                 } catch (error) {
-                    console.log(`Error clicking button ${index + 1}: ${error.message}`);
+                    // Silent error handling
                 }
             }, index * 300);
         });
@@ -43,22 +47,22 @@
     }
     
     function runRemovalCycle() {
-        console.log('Running removal cycle...');
+        if (isScriptComplete) return;
         
         const foundButtons = findAndClickRemoveButtons();
         
-        if (foundButtons) {
+        if (foundButtons && !isScriptComplete) {
             setTimeout(() => {
-                console.log('Waiting for page updates...');
-                setTimeout(runRemovalCycle, 2000);
+                if (!isScriptComplete) {
+                    setTimeout(runRemovalCycle, 2000);
+                }
             }, 2000);
         }
     }
     
     const originalConfirm = window.confirm;
-    window.confirm = () => true;
+    window.confirm = () => isScriptComplete ? false : true;
     
-    console.log('Starting in 2 seconds...');
     setTimeout(runRemovalCycle, 2000);
     
     setTimeout(() => {
